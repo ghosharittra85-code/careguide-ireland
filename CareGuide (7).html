@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CareGuide 🇮🇪</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--blue:#003F87;--green:#009A44;--ink:#1e2d3d;--muted:#5a7184;--border:#dce8f5}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:linear-gradient(135deg,#e8f0fe 0%,#f0fdf4 100%);min-height:100vh}
+#app{max-width:480px;margin:0 auto;background:white;min-height:100vh;display:flex;flex-direction:column;box-shadow:0 0 40px rgba(0,40,100,0.12)}
+.header{background:var(--blue);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.logo{font-family:'Lora',serif;font-size:20px;font-weight:700;color:white}
+.lang-btn{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);border-radius:20px;padding:5px 14px;color:white;font-size:12px;font-weight:600;cursor:pointer}
+.disc{background:#fff7ed;border-bottom:2px solid #f59e0b;padding:10px 16px;font-size:12px;color:#92400e;text-align:center;font-weight:500;line-height:1.4}
+.content{flex:1;padding:24px 20px 120px;overflow-y:auto}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:white;border-top:1px solid var(--border);display:flex;z-index:200;box-shadow:0 -4px 16px rgba(0,30,80,0.08)}
+.bni{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 14px;cursor:pointer;border:none;background:none;color:var(--muted);font-size:10px;font-weight:600;gap:4px;transition:color .2s}
+.bni.active{color:var(--blue)}
+.bni svg{width:20px;height:20px}
+.bni-dot{width:5px;height:5px;border-radius:50%;background:var(--blue);display:none}
+.bni.active .bni-dot{display:block}
+.screen{display:none}
+.screen.active{display:block;animation:up .2s ease}
+@keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* HOME */
+.home-title{font-family:'Lora',serif;font-size:28px;font-weight:700;color:var(--ink);line-height:1.2;margin-bottom:10px;margin-top:28px}
+.home-sub{font-size:15px;color:var(--muted);line-height:1.6;margin-bottom:24px}
+.api-box{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:18px;margin-bottom:20px}
+.api-box h3{font-size:14px;font-weight:700;color:#9a3412;margin-bottom:6px}
+.api-box p{font-size:12px;color:#7c2d12;margin-bottom:10px;line-height:1.5}
+.api-input{width:100%;padding:10px 12px;border:1px solid #fdba74;border-radius:8px;font-size:14px;font-family:inherit;outline:none;margin-bottom:8px}
+.api-save{width:100%;padding:10px;background:#ea580c;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.ta-wrap{background:white;border:2px solid var(--border);border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,40,100,0.06);transition:border-color .2s}
+.ta-wrap:focus-within{border-color:var(--blue)}
+.ta-lbl{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--blue);margin-bottom:8px;display:block}
+.main-ta{width:100%;min-height:130px;border:none;outline:none;resize:none;font-family:inherit;font-size:15px;color:var(--ink);line-height:1.6;background:transparent}
+.main-ta::placeholder{color:#b0c4d8}
+.char{font-size:11px;color:#b0c4d8;text-align:right;margin-top:6px}
+.btn-green{width:100%;padding:16px;background:var(--green);color:white;border:none;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-green:hover{background:#00b84f}
+.privacy{text-align:center;font-size:12px;color:#b0c4d8;margin-top:10px}
+
+/* RESULT */
+.prev-lbl{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;margin-top:4px}
+.prev-txt{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--muted);font-style:italic;margin-bottom:18px;line-height:1.5}
+.loading{display:none;flex-direction:column;align-items:center;padding:48px 0;gap:14px}
+.spinner{width:40px;height:40px;border:3px solid #e2e8f0;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p{color:var(--muted);font-size:14px}
+.ai-card{background:white;border:1px solid var(--border);border-radius:18px;padding:22px;box-shadow:0 4px 20px rgba(0,40,100,0.08);margin-bottom:14px;border-left:4px solid var(--blue)}
+.ai-badge{display:inline-flex;align-items:center;gap:6px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;color:var(--blue);margin-bottom:12px}
+.ai-text{font-size:15px;color:var(--ink);line-height:1.75;white-space:pre-wrap}
+.warn-box{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;font-size:13px;color:#78350f;display:flex;gap:8px;margin-bottom:18px}
+.ci-title{font-family:'Lora',serif;font-size:17px;font-weight:600;color:var(--ink);text-align:center;margin-bottom:12px}
+.ci-btn{width:100%;padding:14px;background:white;color:var(--green);border:2px solid var(--green);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px}
+.ci-btn:hover{background:var(--green);color:white}
+.ci-confirm{background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:14px;text-align:center;font-size:14px;color:#15803d;font-weight:600;margin-top:4px;display:none}
+
+/* FOLLOW UP */
+.fu-hero{text-align:center;padding:28px 0 20px}
+.fu-icon{font-size:52px;margin-bottom:12px}
+.fu-hero h2{font-family:'Lora',serif;font-size:22px;font-weight:700;color:var(--ink);line-height:1.3;margin-bottom:8px}
+.fu-hero p{font-size:14px;color:var(--muted)}
+.ans-btns{display:flex;flex-direction:column;gap:12px;margin:20px 0}
+.btn-yes{width:100%;padding:16px;background:var(--green);color:white;border:none;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-no{width:100%;padding:16px;background:white;color:#d97706;border:2px solid #d97706;border-radius:14px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit}
+.sorted-msg{display:none;text-align:center;padding:32px 0}
+.sorted-tick{font-size:64px;margin-bottom:12px}
+.sorted-msg h3{font-family:'Lora',serif;font-size:22px;color:var(--green);margin-bottom:8px}
+.sorted-msg p{font-size:14px;color:var(--muted)}
+.letter-sec{display:none;margin-top:8px}
+.letter-lbl{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px}
+.letter-box{background:#f8fafc;border:1px solid var(--border);border-radius:12px;padding:16px;font-size:14px;color:var(--ink);line-height:1.7;white-space:pre-wrap;font-family:inherit;margin-bottom:10px}
+.btn-copy{width:100%;padding:13px;background:var(--blue);color:white;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:8px}
+.copy-ok{text-align:center;color:var(--green);font-size:13px;font-weight:600;display:none;margin-bottom:12px}
+.btn-new{width:100%;padding:12px;background:white;color:var(--blue);border:2px solid var(--blue);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:14px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-new:hover{background:var(--blue);color:white}
+.btn-clear-letter{width:100%;padding:11px;background:white;color:#ef4444;border:2px solid #ef4444;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px;margin-bottom:12px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-clear-letter:hover{background:#ef4444;color:white}
+.email-sec{background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:18px;margin-top:8px}
+.email-sec h4{font-size:14px;font-weight:700;color:var(--blue);margin-bottom:12px}
+.e-field{margin-bottom:10px}
+.e-field label{display:block;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.e-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;background:white}
+.e-input:focus{border-color:var(--blue)}
+.btn-email{width:100%;padding:14px;background:var(--blue);color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px}
+.email-note{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5}
+
+/* AGENT */
+.agent-hero{text-align:center;padding:24px 0 20px}
+.agent-robot{font-size:52px;margin-bottom:10px}
+.agent-hero h2{font-family:'Lora',serif;font-size:22px;font-weight:700;color:var(--ink);margin-bottom:10px}
+.status-badge{display:inline-flex;align-items:center;gap:8px;background:#f0fdf4;border:1px solid #86efac;border-radius:100px;padding:6px 16px;font-size:13px;font-weight:600;color:#15803d}
+.sdot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.info-card{background:white;border:1px solid var(--border);border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,30,80,0.05)}
+.ic-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ic-blue{background:#dbeafe}.ic-green{background:#dcfce7}
+.ic-lbl{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.ic-val{font-size:14px;font-weight:600;color:var(--ink)}
+.cd-card{background:linear-gradient(135deg,#003F87,#0052b0);border-radius:18px;padding:28px 16px;text-align:center;color:white;margin:14px 0;box-shadow:0 8px 32px rgba(0,63,135,0.3);position:relative;overflow:hidden}
+.cd-card::before{content:'';position:absolute;top:-40px;right:-40px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.05)}
+.cd-title{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;opacity:.7;margin-bottom:20px}
+.cd-units{display:flex;justify-content:center;align-items:center;gap:4px;position:relative;z-index:1}
+.cd-unit{text-align:center;min-width:58px}
+.cd-box{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:10px;padding:10px 6px;margin-bottom:6px}
+.cd-num{font-family:'Lora',serif;font-size:38px;font-weight:700;line-height:1;display:block;transition:all .2s ease}
+.cd-lbl{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;opacity:.65}
+.cd-sep{font-size:28px;opacity:.5;margin-bottom:22px;animation:blink 1s step-end infinite}
+@keyframes blink{0%,100%{opacity:.5}50%{opacity:.1}}
+.no-ci-msg{background:#f8fafc;border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center;color:var(--muted);font-size:14px;line-height:1.6}
+.btn-stop{width:100%;padding:13px;background:white;color:#ef4444;border:2px solid #ef4444;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:12px;transition:all .2s}
+.btn-stop:hover{background:#ef4444;color:white}
+.stopped-msg{background:#fff1f2;border:1px solid #fecaca;border-radius:12px;padding:14px;text-align:center;font-size:14px;color:#991b1b;font-weight:600;margin-top:12px;display:none}
+.agent-tip{background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px 16px;font-size:13px;color:#1e3a5f;line-height:1.6;margin-top:12px}
+.hse-btn{background:rgba(0,154,68,0.2);border:1px solid rgba(0,154,68,0.5);border-radius:20px;padding:5px 12px;color:white;font-size:11px;font-weight:600;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.hse-btn:hover{background:rgba(0,154,68,0.4)}
+
+/* HISTORY */
+.history-sec{margin-top:16px}
+.history-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.history-item{background:white;border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:border-color .2s;box-shadow:0 2px 6px rgba(0,30,80,0.04)}
+.history-item:hover{border-color:var(--blue)}
+.history-item-date{font-size:11px;color:var(--muted);margin-bottom:4px}
+.history-item-text{font-size:14px;color:var(--ink);font-weight:500;line-height:1.4}
+.history-empty{font-size:13px;color:var(--muted);font-style:italic}
+
+/* PRINT */
+@media print{
+  .bnav,.lang-btn,.hse-btn,.btn-new,.ci-btn,.btn-stop,.btn-clear-letter,.email-sec,.ans-btns{display:none!important}
+  #app{box-shadow:none;max-width:100%}
+  .content{padding:20px}
+  .screen{display:block!important}
+  #screen-home,#screen-followup,#screen-agent{display:none!important}
+}
+
+/* ── TABLET (768px+) ── */
+@media(min-width:768px){
+  body{padding:24px 16px;background:linear-gradient(135deg,#e8f0fe 0%,#f0fdf4 100%)}
+  #app{max-width:900px;flex-direction:row;flex-wrap:wrap;border-radius:24px;min-height:600px;box-shadow:0 24px 64px rgba(0,30,80,0.18)}
+  .header,.disc{width:100%}
+  .header{border-radius:24px 24px 0 0;padding:18px 32px}
+  .logo{font-size:22px}
+  .content{flex:1;min-height:600px;padding:36px 40px 40px;overflow-y:auto}
+  .bnav{position:relative;bottom:auto;left:auto;transform:none;width:220px;flex-shrink:0;flex-direction:column;border-top:none;border-left:1px solid var(--border);padding:28px 0 28px;background:#fafbff;box-shadow:none;order:999;border-radius:0 0 24px 0;justify-content:flex-start;gap:4px}
+  .bni{flex-direction:row;justify-content:flex-start;padding:13px 24px;font-size:13px;gap:12px;border-left:3px solid transparent;width:100%}
+  .bni.active{border-left-color:var(--blue);background:#eff6ff;color:var(--blue)}
+  .bni-dot{display:none!important}
+  .bni svg{width:18px;height:18px;flex-shrink:0}
+  .home-title{font-size:34px;margin-top:8px}
+  .home-sub{font-size:16px;max-width:520px}
+  .main-ta{min-height:120px}
+  .ai-card{padding:28px}
+  .ai-text{font-size:16px}
+  .cd-num{font-size:42px}
+  .fu-hero h2{font-size:26px}
+}
+
+/* ── LAPTOP / DESKTOP (1100px+) ── */
+@media(min-width:1100px){
+  body{padding:40px 32px}
+  #app{max-width:1100px;min-height:680px}
+  .content{padding:48px 56px 48px}
+  .bnav{width:240px;padding:32px 0}
+  .bni{padding:14px 28px;font-size:14px}
+  .home-title{font-size:40px}
+  .home-sub{font-size:17px;max-width:600px}
+  .main-ta{min-height:140px;font-size:16px}
+  .btn-green{font-size:17px;padding:18px}
+  .ai-text{font-size:16px;line-height:1.8}
+  .ci-btn{font-size:15px;padding:16px}
+  .cd-num{font-size:52px}
+  .cd-card{padding:36px 20px}
+  .fu-hero h2{font-size:28px}
+  .agent-hero h2{font-size:26px}
+  .info-card{padding:20px 24px}
+  .ic-icon{width:48px;height:48px;font-size:22px}
+  .ic-val{font-size:16px}
+}
+
+/* ── LARGE DESKTOP (1400px+) ── */
+@media(min-width:1400px){
+  body{padding:48px 40px}
+  #app{max-width:1200px}
+  .content{padding:56px 72px 56px}
+  .home-title{font-size:44px}
+}
+/* PASSWORD OVERLAY */
+.pw-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#003F87,#009A44);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px}
+.pw-box{background:white;border-radius:24px;padding:40px 32px;max-width:380px;width:100%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.2)}
+.pw-logo{font-family:'Lora',serif;font-size:28px;font-weight:700;color:#003F87;margin-bottom:6px}
+.pw-sub{font-size:14px;color:#5a7184;margin-bottom:28px;line-height:1.5}
+.pw-input{width:100%;padding:14px 16px;border:2px solid #dce8f5;border-radius:12px;font-size:16px;font-family:inherit;outline:none;text-align:center;letter-spacing:3px;margin-bottom:12px;transition:border-color .2s}
+.pw-input:focus{border-color:#003F87}
+.pw-btn{width:100%;padding:14px;background:#009A44;color:white;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:10px}
+.pw-btn:hover{background:#00b84f}
+.pw-err{color:#ef4444;font-size:13px;font-weight:600;display:none;margin-bottom:8px}
+.pw-hint{font-size:12px;color:#b0c4d8;line-height:1.5}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- PASSWORD OVERLAY -->
+  <div class="pw-overlay" id="pwOverlay">
+    <div class="pw-box">
+      <div class="pw-logo">CareGuide 🇮🇪</div>
+      <p class="pw-sub">Enter the access password to continue</p>
+      <input class="pw-input" id="pwInput" type="password" placeholder="••••••••••••" onkeydown="if(event.key==='Enter')checkPass()"/>
+      <div class="pw-err" id="pwErr">❌ Incorrect password. Try again.</div>
+      <button class="pw-btn" onclick="checkPass()">Enter CareGuide →</button>
+      <p class="pw-hint">Password provided by the developer.</p>
+    </div>
+  </div>
+
+  <div class="header">
+    <div class="logo">CareGuide 🇮🇪</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <a href="https://www.hse.ie" target="_blank" rel="noopener" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:4px 12px 4px 4px;color:white;font-size:11px;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:6px" id="hseLinkBtn"><img src="https://www.hse.ie/favicon.ico" style="width:18px;height:18px;border-radius:4px;background:white;padding:1px" onerror="this.style.display='none'"/> <span id="hseLinkTxt">HSE.ie</span></a>
+      <button class="lang-btn" id="langBtn" onclick="toggleLang()">EN | GA</button>
+    </div>
+  </div>
+  <div class="disc" id="discBar">⚠️ <strong>Always consult your doctor.</strong> CareGuide provides general process information only — not medical advice.</div>
+
+  <div class="content">
+
+    <!-- HOME -->
+    <div class="screen active" id="screen-home">
+      <h1 class="home-title" id="homeTitle">Just had a hospital appointment?</h1>
+      <p class="home-sub" id="homeSub">Tell us what happened in your own words — we'll tell you exactly what comes next.</p>
+      <div id="apiSection"></div>
+      <div class="ta-wrap">
+        <span class="ta-lbl" id="taLbl">YOUR APPOINTMENT</span>
+        <textarea class="main-ta" id="apptInput" maxlength="500" oninput="document.getElementById('charCount').textContent=this.value.length"></textarea>
+        <div class="char"><span id="charCount">0</span>/500</div>
+      </div>
+      <button class="btn-green" onclick="getGuide()"><span id="mainBtnTxt">Tell me what happens next →</span></button>
+      <p class="privacy" id="privacyTxt">🔒 Nothing you type is stored or saved anywhere.</p>
+    </div>
+
+    <!-- RESULT -->
+    <div class="screen" id="screen-result">
+      <div id="emptyResult" style="text-align:center;padding:60px 20px;display:block">
+        <div style="font-size:52px;margin-bottom:16px">📋</div>
+        <h3 id="emptyResultTitle" style="font-family:'Lora',serif;font-size:20px;color:var(--ink);margin-bottom:10px">No result yet</h3>
+        <p id="emptyResultSub" style="font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:20px">Go to the Home screen, describe your appointment and press the green button to get your guide.</p>
+        <button class="btn-green" onclick="go('home')" style="max-width:280px;margin:0 auto" id="goHomeBtn"><span id="goHomeTxt">Go to Home →</span></button>
+      </div>
+      <div id="resultMain" style="display:none">
+      <div class="prev-lbl" id="prevLbl">YOUR APPOINTMENT</div>
+      <div class="prev-txt" id="prevTxt"></div>
+      <div class="loading" id="loadingDiv">
+        <div class="spinner"></div>
+        <p id="loadingTxt">CareGuide is working for you...</p>
+      </div>
+      <div id="resultDiv" style="display:none">
+        <div class="ai-card">
+          <div class="ai-badge">⚙️ <span id="aiBadge">AI Generated · Not Medical Advice</span></div>
+          <div class="ai-text" id="aiText"></div>
+        </div>
+        <div class="warn-box"><span>⚠️</span><span id="warnTxt">This is general process information only. Always follow your doctor's instructions.</span></div>
+        <div style="display:flex;gap:10px;margin-bottom:14px">
+          <button class="btn-new" onclick="newQuestion()" id="newQBtn" style="margin-bottom:0;flex:1">✏️ <span id="newQTxt">Ask a new question</span></button>
+          <button class="btn-new" onclick="window.print()" id="printBtn" style="margin-bottom:0;flex:1;color:#6366f1;border-color:#6366f1" onmouseover="this.style.background='#6366f1';this.style.color='white'" onmouseout="this.style.background='white';this.style.color='#6366f1'">🖨️ <span id="printTxt">Print Guide</span></button>
+        </div>
+        <p class="ci-title" id="ciTitle">When should CareGuide check in with you?</p>
+        <button class="ci-btn" onclick="setCheckin(3)">📅 <span id="ci3">Check in with me in 3 days</span></button>
+        <button class="ci-btn" onclick="setCheckin(7)">📅 <span id="ci7">Check in with me in 1 week</span></button>
+        <button class="ci-btn" onclick="setCheckin(14)">📅 <span id="ci14">Check in with me in 2 weeks</span></button>
+        <div class="ci-confirm" id="ciConfirm"></div>
+      </div>
+      </div><!-- /resultMain -->
+    </div>
+
+    <!-- FOLLOW UP -->
+    <div class="screen" id="screen-followup">
+      <div class="fu-hero">
+        <div class="fu-icon">🔔</div>
+        <h2 id="fuTitle">Checking in — have you heard back yet?</h2>
+        <p id="fuSub">It's been a while since your appointment. Let us know how things are going.</p>
+      </div>
+      <div class="ans-btns" id="ansBtns">
+        <button class="btn-yes" onclick="showSorted()" id="btnYes">Yes, all sorted ✅</button>
+        <button class="btn-no" onclick="showLetter()" id="btnNo">No, nothing yet ⚠️</button>
+      </div>
+      <div class="sorted-msg" id="sortedMsg">
+        <div class="sorted-tick">🎉</div>
+        <h3 id="sortedTitle">Great news!</h3>
+        <p id="sortedTxt">We're delighted to hear you got sorted. Take care of yourself!</p>
+      </div>
+      <div class="letter-sec" id="letterSec">
+        <div class="letter-lbl" id="letterLbl">📝 Your follow-up letter — ready to send</div>
+        <div class="letter-box" id="letterBox"></div>
+        <button class="btn-copy" onclick="copyLetter()" id="copyBtn">📋 Copy Letter</button>
+        <div class="copy-ok" id="copyOk">✅ Copied!</div>
+        <button class="btn-clear-letter" onclick="clearLetter()" id="clearLetterBtn">🗑️ <span id="clearLetterTxt">Delete letter &amp; generate new</span></button>
+        <div class="email-sec">
+          <h4 id="emailTitle">📧 Send this letter by email</h4>
+          <div class="e-field"><label id="nameLbl">Your Name</label><input class="e-input" id="senderName" type="text" oninput="updateLetter()"/></div>
+          <div class="e-field"><label id="emailLbl">Hospital / Department Email</label><input class="e-input" id="hospEmail" type="email"/></div>
+          <div class="e-field"><label id="deptLbl">Department Name</label><input class="e-input" id="deptName" type="text"/></div>
+          <button class="btn-email" onclick="sendEmail()" id="emailBtn">✉️ Open in Email App</button>
+          <div class="email-note" id="emailNote">This opens your email app with the letter pre-written. You just press Send.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENT STATUS -->
+    <div class="screen" id="screen-agent">
+      <div class="agent-hero">
+        <div class="agent-robot">🤖</div>
+        <h2 id="agentTitle">CareGuide is working for you</h2>
+        <div class="status-badge"><span class="sdot"></span><span id="statusTxt">Active</span></div>
+      </div>
+      <div id="agentMain"></div>
+      <div class="history-sec" id="historySec">
+        <div class="history-title" id="historyTitle">RECENT APPOINTMENTS</div>
+        <div id="historyList"></div>
+      </div>
+      <div class="agent-tip" id="agentTip">💡 <strong>How this works:</strong> CareGuide stores your check-in date in your browser. On that date it reminds you to check back. If you have not heard back — it writes a follow-up letter for you automatically.</div>
+    </div>
+
+  </div>
+
+  <nav class="bnav">
+    <button class="bni active" id="nav-home" onclick="go('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      <span id="navHome">Home</span><span class="bni-dot"></span>
+    </button>
+    <button class="bni" id="nav-result" onclick="go('result')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span id="navResult">Result</span><span class="bni-dot"></span>
+    </button>
+    <button class="bni" id="nav-followup" onclick="go('followup')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <span id="navFollowUp">Follow Up</span><span class="bni-dot"></span>
+    </button>
+    <button class="bni" id="nav-agent" onclick="go('agent')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+      <span id="navStatus">Status</span><span class="bni-dot"></span>
+    </button>
+  </nav>
+</div>
+
+<script>
+var lang = localStorage.getItem('cg_lang') || 'en';
+var apiKey = localStorage.getItem('cg_key') || '';
+var APP_PASS = 'careguide2026';
+var cdTimer = null;
+
+var TX = {
+en:{
+  homeTitle:'Just had a hospital appointment?',
+  homeSub:"Tell us what happened in your own words — we'll tell you exactly what comes next.",
+  taLbl:'YOUR APPOINTMENT',
+  placeholder:'e.g. I saw a cardiologist today about my heart rhythm...',
+  mainBtnTxt:'Tell me what happens next →',
+  privacyTxt:'🔒 Nothing you type is stored or saved anywhere.',
+  prevLbl:'YOUR APPOINTMENT',
+  loadingTxt:'CareGuide is working for you...',
+  aiBadge:'AI Generated · Not Medical Advice',
+  warnTxt:"This is general process information only. Always follow your doctor's instructions.",
+  ciTitle:'When should CareGuide check in with you?',
+  ci3:'Check in with me in 3 days',
+  ci7:'Check in with me in 1 week',
+  ci14:'Check in with me in 2 weeks',
+  checkinSet:'✅ Check-in set for',
+  fuTitle:'Checking in — have you heard back yet?',
+  fuSub:"It's been a while since your appointment. Let us know how things are going.",
+  btnYes:'Yes, all sorted ✅',
+  btnNo:'No, nothing yet ⚠️',
+  sortedTitle:'Great news!',
+  sortedTxt:"We're delighted to hear you got sorted. Take care of yourself!",
+  letterLbl:'📝 Your follow-up letter — ready to send',
+  copyBtn:'📋 Copy Letter',
+  copyOk:'✅ Copied!',
+  emailTitle:'📧 Send this letter by email',
+  nameLbl:'Your Name',
+  emailLbl:'Hospital / Department Email',
+  deptLbl:'Department Name',
+  emailBtn:'✉️ Open in Email App',
+  emailNote:'This opens your email app with the letter pre-written. You just press Send.',
+  agentTitle:'CareGuide is working for you',
+  statusTxt:'Active',
+  agentTip:'💡 How this works: CareGuide stores your check-in date in your browser. On that date it reminds you to check back. If you have not heard back — it writes a follow-up letter for you automatically.',
+  newQTxt:'Ask a new question',
+  clearLetterTxt:'Delete letter & generate new',
+  navHome:'Home',navResult:'Result',navFollowUp:'Follow Up',navStatus:'Status',
+  langBtn:'EN | GA',
+  discBar:'⚠️ Always consult your doctor. CareGuide provides general process information only — not medical advice.',
+  apiTitle:'🔑 Add Your Claude API Key',
+  apiDesc:'To get AI responses, add your free Anthropic API key from console.anthropic.com',
+  apiSave:'Save API Key',
+  lastAppt:'Last appointment',
+  checkinSched:'Check-in scheduled for',
+  days:'Days',hours:'Hours',mins:'Mins',secs:'Secs',
+  cdTitle:'⏱ COUNTING DOWN',
+  stopBtn:'⏹ Stop Check-in',
+  stoppedMsg:'Check-in cancelled. Go back to set a new one.',
+  noCheckin:'No check-in set yet. Type an appointment on the Home screen, press the green button, then tap a check-in button.',
+  sysprompt:'You are CareGuide, a friendly Irish health navigation assistant. A patient has just described their HSE appointment. Explain in warm plain English: 1. What typically happens next in the Irish health system after this type of appointment. 2. What timeframes to expect. 3. Who contacts them and how. 4. When to follow up if they hear nothing. Never diagnose. Never recommend treatments. Only explain processes. Always say typically not definitely. Under 200 words. Simple numbered steps. No asterisks or markdown. Plain text only.',
+  letterText:"Dear Secretary,\n\nI am writing to follow up on my recent hospital appointment. I was advised that I would be contacted regarding my next steps but have not yet received any communication.\n\nCould you please advise on the current status of my referral or next appointment?\n\nThank you for your assistance.\n\nYours sincerely,\n[Your name]",
+  namePlaceholder:'e.g. Mary Murphy',
+  emailPlaceholder:'e.g. cardiology@hse.ie',
+  deptPlaceholder:'e.g. Cardiology Department'
+},
+ga:{
+  homeTitle:'Ar fhreastail tú ar choinne ospidéil?',
+  homeSub:'Inis dúinn céard a tharla — inseoimid duit go díreach céard a tharlóidh ansin.',
+  taLbl:'DO CHOINNE',
+  placeholder:'e.g. Chonaic mé cardieolaí inniu faoi mo rithim croí...',
+  mainBtnTxt:'Inis dom céard a tharlóidh ansin →',
+  privacyTxt:'🔒 Ní stóráiltear aon rud a chlóscríobhann tú.',
+  prevLbl:'DO CHOINNE',
+  loadingTxt:'Tá CareGuide ag obair duit...',
+  aiBadge:'Ginte ag AI · Ní Comhairle Leighis',
+  warnTxt:'Eolas ginearálta próisis amháin é seo. Lean comhairle shonrach do dhochtúra i gcónaí.',
+  ciTitle:'Cathain ba chóir do CareGuide seiceáil isteach leat?',
+  ci3:'Seiceáil isteach liom i gceann 3 lá',
+  ci7:'Seiceáil isteach liom i gceann 1 seachtain',
+  ci14:'Seiceáil isteach liom i gceann 2 sheachtain',
+  checkinSet:'✅ Seiceáil isteach socraithe do',
+  fuTitle:'Ag seiceáil isteach — ar chuala tú ar ais fós?',
+  fuSub:'Tá sé tamall ó bhí do choinne agat. Inis dúinn conas atá cúrsaí.',
+  btnYes:'Tá, tá gach rud socraithe ✅',
+  btnNo:'Níl, fós ⚠️',
+  sortedTitle:'Nuacht iontach!',
+  sortedTxt:'Tá áthas orainn go bhfuair tú réiteach. Tabhair aire duit féin!',
+  letterLbl:'📝 Do litir lean-suas — réidh le cóipeáil',
+  copyBtn:'📋 Cóipeáil an Litir',
+  copyOk:'✅ Cóipeáilte!',
+  emailTitle:'📧 Seol an litir seo ar ríomhphost',
+  nameLbl:'D\'Ainm',
+  emailLbl:'Ríomhphost Ospidéil / Roinne',
+  deptLbl:'Ainm na Roinne',
+  emailBtn:'✉️ Oscail in Aip Ríomhphoist',
+  emailNote:'Osclaíonn sé seo d\'aip ríomhphoist leis an litir réamhscríofa. Ní mór duit Seol a bhrú.',
+  agentTitle:'Tá CareGuide ag obair duit',
+  statusTxt:'Gníomhach',
+  agentTip:'💡 Conas a oibríonn sé: Stórálann CareGuide do dháta seiceála isteach i do bhrabhsálaí. Ar an dáta sin meabhraíonn sé duit teacht ar ais. Mura bhfuair tú freagra — scríobhann sé litir lean-suas duit go huathoibríoch.',
+  newQTxt:'Ceist nua a chur',
+  clearLetterTxt:'Scrios litir & gin ceann nua',
+  navHome:'Baile',navResult:'Toradh',navFollowUp:'Lean Suas',navStatus:'Stádas',
+  langBtn:'GA | EN',
+  discBar:'⚠️ Comhairle a fháil ó do dhochtúir i gcónaí. Ní ionadaí comhairle leighis gairmiúil é CareGuide.',
+  apiTitle:'🔑 Cuir d\'Eochair API Claude leis',
+  apiDesc:'Chun freagraí AI a fháil, cuir d\'eochair API Anthropic leis ó console.anthropic.com',
+  apiSave:'Sábháil Eochair API',
+  lastAppt:'Coinne deireanach',
+  checkinSched:'Seiceáil isteach socraithe do',
+  days:'Lá',hours:'Uair',mins:'Nóim',secs:'Soic',
+  cdTitle:'⏱ AG COMHAIREAMH SÍOS',
+  stopBtn:'⏹ Stop Seiceáil Isteach',
+  stoppedMsg:'Seiceáil isteach curtha ar ceal. Téigh ar ais chun ceann nua a shocrú.',
+  noCheckin:'Níl aon seiceáil isteach socraithe fós. Clóscríobh coinne ar an scáileán Baile, brúigh an cnaipe glas, ansin tapáil cnaipe seiceáil isteach.',
+  sysprompt:'You are CareGuide, a friendly Irish health navigation assistant. A patient has just described their HSE appointment. YOU MUST RESPOND ENTIRELY IN IRISH GAEILGE. Every single word must be in Irish Gaeilge. Explain in warm plain Irish: 1. What typically happens next. 2. Timeframes to expect. 3. Who contacts them and how. 4. When to follow up. Never diagnose. Never recommend treatments. Under 200 words. Simple numbered steps. No asterisks or markdown.',
+  letterText:"A Rúnaí a chara,\n\nScríobhaim chugat chun lean-suas a dhéanamh ar mo choinne ospidéil le déanaí. Níor fuair mé aon chumarsáid go fóill faoi mo chéad chéim eile.\n\nAn bhféadfá cur in iúl dom faoi stádas reatha mo atreoraithe nó mo chéad choinne eile?\n\nGo raibh maith agat as do chabhair.\n\nLe meas,\n[D'ainm]",
+  namePlaceholder:'e.g. Máire Ní Mhurchú',
+  emailPlaceholder:'e.g. cairdieolaíocht@hse.ie',
+  deptPlaceholder:'e.g. Roinn Cairdieolaíochta'
+}
+};
+
+function T(k){ return (TX[lang]||TX.en)[k] || TX.en[k] || ''; }
+
+function applyText(){
+  var ids = ['homeTitle','homeSub','taLbl','mainBtnTxt','privacyTxt','prevLbl','newQTxt','clearLetterTxt',
+    'loadingTxt','aiBadge','warnTxt','ciTitle','ci3','ci7','ci14',
+    'fuTitle','fuSub','btnYes','btnNo','sortedTitle','sortedTxt',
+    'letterLbl','copyBtn','copyOk','emailTitle','nameLbl','emailLbl',
+    'deptLbl','emailBtn','emailNote','agentTitle','statusTxt','agentTip',
+    'navHome','navResult','navFollowUp','navStatus','langBtn','discBar'];
+  ids.forEach(function(k){
+    var el = document.getElementById(k);
+    if(el) el.textContent = T(k);
+  });
+  var ta = document.getElementById('apptInput');
+  if(ta) ta.placeholder = T('placeholder');
+  var lb = document.getElementById('letterBox');
+  if(lb) lb.textContent = T('letterText');
+  var sn = document.getElementById('senderName');
+  if(sn) sn.placeholder = T('namePlaceholder');
+  var he = document.getElementById('hospEmail');
+  if(he) he.placeholder = T('emailPlaceholder');
+  var dn = document.getElementById('deptName');
+  if(dn) dn.placeholder = T('deptPlaceholder');
+  renderApi();
+}
+
+function renderApi(){
+  var s = document.getElementById('apiSection');
+  if(s) s.innerHTML = '';
+}
+function saveKey(){}
+
+function toggleLang(){
+  lang = lang==='en'?'ga':'en';
+  localStorage.setItem('cg_lang',lang);
+  applyText();
+  applyNewText();
+  renderHistory();
+  if(document.getElementById('screen-agent').classList.contains('active')) updateAgent();
+}
+
+function go(name){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.bni').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('screen-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  if(name==='agent'){ updateAgent(); renderHistory(); }
+  if(name==='result'){
+    var hasResult = document.getElementById('resultDiv').style.display !== 'none';
+    var hasAppt = !!localStorage.getItem('cg_appt');
+    if(!hasResult && !hasAppt){
+      document.getElementById('emptyResult').style.display='block';
+      document.getElementById('resultMain').style.display='none';
+    }
+  }
+}
+
+// GET GUIDE
+async function getGuide(){
+  var input = document.getElementById('apptInput').value.trim();
+  if(!input){ alert(lang==='ga'?'Cuir síos ar do choinne.':'Please describe your appointment first.'); return; }
+  if(!apiKey){
+    var k = prompt('Enter your Claude API key once to activate CareGuide:');
+    if(k && k.length > 10){ apiKey=k; localStorage.setItem('cg_key',k); }
+    else return;
+  }
+  localStorage.setItem('cg_appt',input);
+  localStorage.setItem('cg_date',new Date().toISOString());
+  // Save to history
+  saveHistory(input);
+  go('result');
+  // Show result area, hide empty state
+  document.getElementById('emptyResult').style.display='none';
+  document.getElementById('resultMain').style.display='block';
+  document.getElementById('prevTxt').textContent = '\u201c'+input+'\u201d';
+  document.getElementById('loadingDiv').style.display='flex';
+  document.getElementById('resultDiv').style.display='none';
+  document.getElementById('ciConfirm').style.display='none';
+  try{
+    var msg = lang==='ga' ? input+'\n\n[FREAGAIR GO HIOMLÁN AS GAEILGE]' : input;
+    var res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,system:T('sysprompt'),messages:[{role:'user',content:msg}]})
+    });
+    var data = await res.json();
+    document.getElementById('aiText').textContent = (data.content&&data.content[0]) ? data.content[0].text : (lang==='ga'?'Earráid. Déan iarracht arís.':'Error. Please try again.');
+  }catch(e){
+    document.getElementById('aiText').textContent = lang==='ga'?'Earráid nasc.':'Connection error. Check your API key.';
+  }
+  document.getElementById('loadingDiv').style.display='none';
+  document.getElementById('resultDiv').style.display='block';
+}
+
+// NEW QUESTION
+function newQuestion(){
+  // Clear old data
+  localStorage.removeItem('cg_appt');
+  localStorage.removeItem('cg_date');
+  localStorage.removeItem('cg_checkin');
+  if(cdTimer){ clearInterval(cdTimer); cdTimer=null; }
+  // Reset home screen
+  document.getElementById('apptInput').value = '';
+  document.getElementById('charCount').textContent = '0';
+  document.getElementById('resultDiv').style.display = 'none';
+  document.getElementById('loadingDiv').style.display = 'none';
+  document.getElementById('ciConfirm').style.display = 'none';
+  // Reset follow up screen
+  document.getElementById('ansBtns').style.display = 'flex';
+  document.getElementById('sortedMsg').style.display = 'none';
+  document.getElementById('letterSec').style.display = 'none';
+  document.getElementById('letterBox').textContent = T('letterText');
+  // Go home
+  go('home');
+}
+
+// CLEAR LETTER
+function clearLetter(){
+  var box = document.getElementById('letterBox');
+  box.textContent = lang==='ga' ? 'Ag scríobh do litreach nua...' : 'Writing your new letter...';
+  box.style.opacity = '0.5';
+  generateLetter();
+}
+
+// SET CHECKIN
+function setCheckin(days){
+  var d = new Date();
+  d.setDate(d.getDate()+days);
+  localStorage.setItem('cg_checkin',d.toISOString());
+  var label = d.toLocaleDateString(lang==='ga'?'ga-IE':'en-IE',{weekday:'long',day:'numeric',month:'long'});
+  var conf = document.getElementById('ciConfirm');
+  conf.textContent = T('checkinSet')+' '+label;
+  conf.style.display='block';
+  setTimeout(function(){ go('agent'); },1600);
+}
+
+// FOLLOW UP
+function showSorted(){
+  document.getElementById('ansBtns').style.display='none';
+  document.getElementById('sortedMsg').style.display='block';
+  document.getElementById('letterSec').style.display='none';
+}
+function showLetter(){
+  document.getElementById('letterSec').style.display='block';
+  generateLetter();
+}
+
+async function generateLetter(){
+  var appt = localStorage.getItem('cg_appt') || '';
+  if(!appt || !apiKey){
+    // fallback to template if no API key or no appointment
+    document.getElementById('letterBox').textContent = T('letterText');
+    return;
+  }
+  var box = document.getElementById('letterBox');
+  box.textContent = lang==='ga' ? 'Ag scríobh do litreach...' : 'Writing your letter...';
+  box.style.opacity = '0.5';
+  try {
+    var sysprompt = lang==='ga'
+      ? 'Scríobh litir lean-suas ghearr, foirmiúil, múinte as Gaeilge ó othar chuig rúnaí roinne ospidéil. Bunaithe ar an gcoinne a thuairiscítear, scríobh litir ghairmiúil a iarrann nuashonrú ar stádas an atreoraithe nó na céad choinne eile. Ná cuir isteach dátaí sonracha. Coinnigh é gearr - 4 mhír. Téacs amháin, gan formáidiú markdown.'
+      : 'Write a short, polite, professional follow-up letter in English from a patient to a hospital department secretary. Based on the appointment described, write a professional letter requesting a status update on their referral or next appointment. Do not include specific dates. Keep it brief - 4 paragraphs. Plain text only, no markdown formatting.';
+    var res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:sysprompt,messages:[{role:'user',content:appt}]})
+    });
+    var data = await res.json();
+    if(data.content && data.content[0]){
+      box.textContent = data.content[0].text;
+    } else {
+      box.textContent = T('letterText');
+    }
+  } catch(e){
+    box.textContent = T('letterText');
+  }
+  box.style.opacity = '1';
+}
+function updateLetter(){
+  var name = document.getElementById('senderName').value.trim();
+  if(!name) return;
+  var box = document.getElementById('letterBox');
+  var lines = box.textContent.split('\n');
+  lines[lines.length-1] = name;
+  box.textContent = lines.join('\n');
+}
+function copyLetter(){
+  navigator.clipboard.writeText(document.getElementById('letterBox').textContent).then(function(){
+    var ok = document.getElementById('copyOk');
+    ok.style.display='block';
+    setTimeout(function(){ ok.style.display='none'; },3000);
+  });
+}
+function sendEmail(){
+  var to = document.getElementById('hospEmail').value.trim();
+  var dept = document.getElementById('deptName').value.trim() || 'the Department';
+  var name = document.getElementById('senderName').value.trim() || '[Your name]';
+  var appt = localStorage.getItem('cg_appt') || 'my recent appointment';
+  if(!to){ alert(lang==='ga'?'Cuir isteach seoladh ríomhphoist ar dtús.':'Please enter the hospital email address first.'); return; }
+  var subj = encodeURIComponent(lang==='ga'?'Lean-suas: Coinne Ospidéil le Déanaí':'Follow-up: Recent Hospital Appointment');
+  var body = encodeURIComponent(
+    (lang==='ga'?'A Rúnaí a chara,\n\n':'Dear '+dept+' Secretary,\n\n')+
+    (lang==='ga'?'Scríobhaim chugat chun lean-suas a dhéanamh ar mo choinne ospidéil le déanaí maidir le ':'I am writing to follow up on my recent hospital appointment regarding ')+appt+'.\n\n'+
+    (lang==='ga'?'Níor fuair mé aon chumarsáid go fóill faoi mo chéad chéim eile.':'I was advised that I would be contacted regarding my next steps but have not yet received any communication.')+'\n\n'+
+    (lang==='ga'?'An bhféadfá cur in iúl dom faoi stádas reatha mo atreoraithe?':'Could you please advise on the current status of my referral or next appointment?')+'\n\n'+
+    (lang==='ga'?'Go raibh maith agat.\n\nLe meas,\n':'Thank you for your assistance.\n\nYours sincerely,\n')+name
+  );
+  // Try multiple methods to open email
+  var mailtoLink = 'mailto:'+to+'?subject='+subj+'&body='+body;
+  var a = document.createElement('a');
+  a.href = mailtoLink;
+  a.target = '_blank';
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// AGENT + TIMER
+function stopTimer(){
+  if(cdTimer){ clearInterval(cdTimer); cdTimer=null; }
+  localStorage.removeItem('cg_checkin');
+  ['cdD','cdH','cdM','cdS'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.textContent='00';
+  });
+  var btn=document.querySelector('.btn-stop'); if(btn) btn.style.display='none';
+  var msg=document.getElementById('stoppedMsg'); if(msg) msg.style.display='block';
+}
+
+function updateAgent(){
+  var wrap=document.getElementById('agentMain');
+  if(!wrap) return;
+  if(cdTimer){ clearInterval(cdTimer); cdTimer=null; }
+  var checkin=localStorage.getItem('cg_checkin');
+  var apptDate=localStorage.getItem('cg_date');
+  if(!checkin){
+    wrap.innerHTML='<div class="no-ci-msg">'+T('noCheckin')+'</div>';
+    return;
+  }
+  var cd=new Date(checkin);
+  var apptStr='';
+  if(apptDate){
+    var ad=new Date(apptDate);
+    apptStr='<div class="info-card"><div class="ic-icon ic-blue">📋</div><div><div class="ic-lbl">'+T('lastAppt')+'</div><div class="ic-val">'+ad.toLocaleDateString('en-IE',{weekday:'short',day:'numeric',month:'long',year:'numeric'})+'</div></div></div>';
+  }
+  wrap.innerHTML=apptStr+
+    '<div class="info-card"><div class="ic-icon ic-green">🔔</div><div><div class="ic-lbl">'+T('checkinSched')+'</div><div class="ic-val">'+cd.toLocaleDateString('en-IE',{weekday:'short',day:'numeric',month:'long',year:'numeric'})+'</div></div></div>'+
+    '<div class="cd-card">'+
+      '<div class="cd-title">'+T('cdTitle')+'</div>'+
+      '<div class="cd-units">'+
+        '<div class="cd-unit"><div class="cd-box"><span class="cd-num" id="cdD">00</span></div><div class="cd-lbl">'+T('days')+'</div></div>'+
+        '<div class="cd-sep">:</div>'+
+        '<div class="cd-unit"><div class="cd-box"><span class="cd-num" id="cdH">00</span></div><div class="cd-lbl">'+T('hours')+'</div></div>'+
+        '<div class="cd-sep">:</div>'+
+        '<div class="cd-unit"><div class="cd-box"><span class="cd-num" id="cdM">00</span></div><div class="cd-lbl">'+T('mins')+'</div></div>'+
+        '<div class="cd-sep">:</div>'+
+        '<div class="cd-unit"><div class="cd-box"><span class="cd-num" id="cdS">00</span></div><div class="cd-lbl">'+T('secs')+'</div></div>'+
+      '</div>'+
+    '</div>'+
+    '<button class="btn-stop" onclick="stopTimer()">'+T('stopBtn')+'</button>'+
+    '<div class="stopped-msg" id="stoppedMsg">'+T('stoppedMsg')+'</div>';
+
+  function tick(){
+    var diff=cd.getTime()-Date.now();
+    var d=document.getElementById('cdD'),h=document.getElementById('cdH'),m=document.getElementById('cdM'),s=document.getElementById('cdS');
+    if(!d){clearInterval(cdTimer);cdTimer=null;return;}
+    if(diff<=0){d.textContent='00';h.textContent='00';m.textContent='00';s.textContent='00';clearInterval(cdTimer);cdTimer=null;return;}
+    var t=Math.floor(diff/1000);
+    d.textContent=String(Math.floor(t/86400)).padStart(2,'0');
+    h.textContent=String(Math.floor((t%86400)/3600)).padStart(2,'0');
+    m.textContent=String(Math.floor((t%3600)/60)).padStart(2,'0');
+    s.textContent=String(t%60).padStart(2,'0');
+  }
+  tick();
+  cdTimer=setInterval(tick,1000);
+}
+
+// HISTORY
+function saveHistory(text){
+  var history = JSON.parse(localStorage.getItem('cg_history') || '[]');
+  history.unshift({ text: text, date: new Date().toISOString() });
+  if(history.length > 3) history = history.slice(0,3);
+  localStorage.setItem('cg_history', JSON.stringify(history));
+}
+
+function renderHistory(){
+  var list = document.getElementById('historyList');
+  if(!list) return;
+  var history = JSON.parse(localStorage.getItem('cg_history') || '[]');
+  if(history.length === 0){
+    list.innerHTML = '<div class="history-empty">'+(lang==='ga'?'Gan stair coinne fós.':'No appointment history yet.')+'</div>';
+    return;
+  }
+  list.innerHTML = history.map(function(h){
+    var d = new Date(h.date);
+    var dateStr = d.toLocaleDateString('en-IE',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+    var enc = encodeURIComponent(h.text);
+    return '<div class="history-item" onclick="reloadAppt(decodeURIComponent(\'' + enc + '\'))">'+
+      '<div class="history-item-date">'+dateStr+'</div>'+
+      '<div class="history-item-text">'+h.text+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function reloadAppt(text){
+  document.getElementById('apptInput').value = text;
+  document.getElementById('charCount').textContent = text.length;
+  go('home');
+}
+
+// TRANSLATIONS for new elements
+function applyNewText(){
+  var el;
+  el = document.getElementById('emptyResultTitle');
+  if(el) el.textContent = lang==='ga'?'Gan toradh fós':'No result yet';
+  el = document.getElementById('emptyResultSub');
+  if(el) el.textContent = lang==='ga'?'Téigh go dtí an scáileán Baile, cuir síos ar do choinne agus brúigh an cnaipe glas.':'Go to the Home screen, describe your appointment and press the green button to get your guide.';
+  el = document.getElementById('goHomeTxt');
+  if(el) el.textContent = lang==='ga'?'Téigh go Baile →':'Go to Home →';
+  el = document.getElementById('hseLinkTxt');
+  if(el) el.textContent = lang==='ga'?'FSS.ie':'HSE.ie';
+  el = document.getElementById('printTxt');
+  if(el) el.textContent = lang==='ga'?'Priontáil Treoir':'Print Guide';
+  el = document.getElementById('historyTitle');
+  if(el) el.textContent = lang==='ga'?'COINNÍ LE DÉANAÍ':'RECENT APPOINTMENTS';
+}
+
+// PASSWORD
+function checkPass(){
+  var val = document.getElementById('pwInput').value.trim();
+  if(val === APP_PASS){
+    localStorage.setItem('cg_unlocked','1');
+    document.getElementById('pwOverlay').style.display='none';
+    // load the real api key
+    fetch('https://raw.githubusercontent.com/placeholder/placeholder/main/placeholder.txt')
+      .catch(function(){});
+  } else {
+    var err = document.getElementById('pwErr');
+    err.style.display='block';
+    document.getElementById('pwInput').value='';
+    setTimeout(function(){ err.style.display='none'; },3000);
+  }
+}
+
+// INIT
+if(localStorage.getItem('cg_unlocked')==='1'){
+  document.getElementById('pwOverlay').style.display='none';
+}
+applyText();
+applyNewText();
+renderHistory();
+</script>
+</body>
+</html>
